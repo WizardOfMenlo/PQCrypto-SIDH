@@ -9,7 +9,7 @@
 *********************************************************************************************/  
 
 #include "P217_api.h" 
-#include "P217_internal.h"
+#include "P217internal.h"
 #include "../internal.h"
 
 
