@@ -363,6 +363,7 @@ void fpinv_chain_mont(digit_t* a)
     unsigned int i, j;
     
 #if (NBITS_FIELD == 217)
+    // TODO: Implement this for p217
     exit(-1);
 #elif (NBITS_FIELD == 434)
     felm_t t[31], tt;
