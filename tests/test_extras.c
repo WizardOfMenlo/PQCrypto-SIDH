@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 
+static uint64_t p217[4]              = { 0xFFFFFFFFFFFFFFFF, 0x7BC6BFFFFFFFFFFF, 0xA10872128AF43417, 0x0000000001248A1B };
 static uint64_t p434[7]  = { 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFDC1767AE2FFFFFF, 
                              0x7BC65C783158AEA3, 0x6CFC5FD681C52056, 0x0002341F27177344 };
 static uint64_t p503[8]  = { 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0xABFFFFFFFFFFFFFF, 
@@ -83,6 +84,33 @@ static void sub_test(digit_t* a, digit_t* b, digit_t* c, unsigned int nwords)
         c[i] = res - borrow;
         borrow = carry || (res < borrow);
     } 
+}
+
+
+void fprandom217_test(digit_t* a)
+{ // Generating a pseudo-random field element in [0, p217-1] 
+  // SECURITY NOTE: distribution is not fully uniform. TO BE USED FOR TESTING ONLY.
+    unsigned int i, diff = 256-217, nwords = NBITS_TO_NWORDS(256);
+    unsigned char* string = NULL;
+
+    string = (unsigned char*)a;
+    for (i = 0; i < sizeof(digit_t)*nwords; i++) {
+        *(string + i) = (unsigned char)rand();              // Obtain 448-bit number
+    }
+    a[nwords-1] &= (((digit_t)(-1) << diff) >> diff);
+
+    while (compare_words((digit_t*)p217, a, nwords) < 1) {  // Force it to [0, modulus-1]
+        sub_test(a, (digit_t*)p217, a, nwords);
+    }
+}
+
+
+void fp2random217_test(digit_t* a)
+{ // Generating a pseudo-random element in GF(p217^2) 
+  // SECURITY NOTE: distribution is not fully uniform. TO BE USED FOR TESTING ONLY.
+
+    fprandom217_test(a);
+    fprandom217_test(a+NBITS_TO_NWORDS(217));
 }
 
 

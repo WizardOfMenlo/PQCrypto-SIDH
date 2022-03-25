@@ -362,7 +362,9 @@ void fpinv_chain_mont(digit_t* a)
 { // Chain to compute a^(p-3)/4 using Montgomery arithmetic.
     unsigned int i, j;
     
-#if (NBITS_FIELD == 434)
+#if (NBITS_FIELD == 217)
+    exit(-1);
+#elif (NBITS_FIELD == 434)
     felm_t t[31], tt;
 
     // Precomputed table

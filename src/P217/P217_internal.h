@@ -29,6 +29,10 @@
 #define MAXBITS_FIELD           256                
 #define MAXWORDS_FIELD          ((MAXBITS_FIELD+RADIX-1)/RADIX)     // Max. number of words to represent field elements
 #define NWORDS64_FIELD          ((NBITS_FIELD+63)/64)               // Number of 64-bit words of a 217-bit field element 
+#define NBITS_ORDER             256
+#define NWORDS_ORDER            ((NBITS_ORDER+RADIX-1)/RADIX)       // Number of words of oA and oB, where oA and oB are the subgroup orders of Alice and Bob, resp.
+#define NWORDS64_ORDER          ((NBITS_ORDER+63)/64)               // Number of 64-bit words of a 224-bit element 
+#define MAXBITS_ORDER           NBITS_ORDER
 #define ALICE                   0
 #define BOB                     1 
 #define OALICE_BITS             110

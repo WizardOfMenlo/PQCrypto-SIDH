@@ -30,6 +30,12 @@ int64_t cpucycles(void);
 // Comparing "nword" elements, a=b? : (1) a!=b, (0) a=b
 int compare_words(digit_t* a, digit_t* b, unsigned int nwords);
 
+// Generating a pseudo-random field element in [0, p217-1] 
+void fprandom217_test(digit_t* a);
+
+// Generating a pseudo-random element in GF(p217^2)
+void fp2random217_test(digit_t* a);
+
 // Generating a pseudo-random field element in [0, p434-1] 
 void fprandom434_test(digit_t* a);
 

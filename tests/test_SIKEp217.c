@@ -14,10 +14,10 @@
 #include "../src/P217/P217_api.h"
 
 
-#define SCHEME_NAME    "SIKEp434"
+#define SCHEME_NAME    "SIKEp217"
 
-#define crypto_kem_keypair            crypto_kem_keypair_SIKEp434
-#define crypto_kem_enc                crypto_kem_enc_SIKEp434
-#define crypto_kem_dec                crypto_kem_dec_SIKEp434
+#define crypto_kem_keypair            crypto_kem_keypair_SIKEp217
+#define crypto_kem_enc                crypto_kem_enc_SIKEp217
+#define crypto_kem_dec                crypto_kem_dec_SIKEp217
 
 #include "test_sike.c"
