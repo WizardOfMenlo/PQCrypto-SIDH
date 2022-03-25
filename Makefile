@@ -80,33 +80,43 @@ CFLAGS+= $(VALGRIND_CFLAGS)
 CFLAGS+= -std=gnu11 -Wall $(ADDITIONAL_SETTINGS) -D $(ARCHITECTURE) -D __NIX__ -D $(USE_OPT_LEVEL) $(MULX) $(ADX) -Wno-missing-braces
 LDFLAGS=-lm
 ifeq "$(USE_OPT_LEVEL)" "_GENERIC_"
+    EXTRA_OBJECTS_217=objs217/fp_generic.o
     EXTRA_OBJECTS_434=objs434/fp_generic.o
     EXTRA_OBJECTS_503=objs503/fp_generic.o
     EXTRA_OBJECTS_610=objs610/fp_generic.o
     EXTRA_OBJECTS_751=objs751/fp_generic.o
 else ifeq "$(USE_OPT_LEVEL)" "_FAST_"
 ifeq "$(ARCHITECTURE)" "_AMD64_"
+    EXTRA_OBJECTS_217=objs217/fp_x64.o objs217/fp_x64_asm.o
     EXTRA_OBJECTS_434=objs434/fp_x64.o objs434/fp_x64_asm.o
     EXTRA_OBJECTS_503=objs503/fp_x64.o objs503/fp_x64_asm.o
     EXTRA_OBJECTS_610=objs610/fp_x64.o objs610/fp_x64_asm.o
     EXTRA_OBJECTS_751=objs751/fp_x64.o objs751/fp_x64_asm.o
 else ifeq "$(ARCHITECTURE)" "_ARM64_"
+    EXTRA_OBJECTS_217=objs217/fp_generic.o # We do not have a ARM impl for p217
     EXTRA_OBJECTS_434=objs434/fp_arm64.o objs434/fp_arm64_asm.o
     EXTRA_OBJECTS_503=objs503/fp_arm64.o objs503/fp_arm64_asm.o
     EXTRA_OBJECTS_610=objs610/fp_arm64.o objs610/fp_arm64_asm.o
     EXTRA_OBJECTS_751=objs751/fp_arm64.o objs751/fp_arm64_asm.o
 endif
 endif
+OBJECTS_217=objs217/P217.o $(EXTRA_OBJECTS_217) objs/random.o objs/fips202.o
 OBJECTS_434=objs434/P434.o $(EXTRA_OBJECTS_434) objs/random.o objs/fips202.o
 OBJECTS_503=objs503/P503.o $(EXTRA_OBJECTS_503) objs/random.o objs/fips202.o
 OBJECTS_610=objs610/P610.o $(EXTRA_OBJECTS_610) objs/random.o objs/fips202.o
 OBJECTS_751=objs751/P751.o $(EXTRA_OBJECTS_751) objs/random.o objs/fips202.o
+# Do not use compressed for P217
 OBJECTS_434_COMP=objs434comp/P434_compressed.o $(EXTRA_OBJECTS_434) objs/random.o objs/fips202.o
 OBJECTS_503_COMP=objs503comp/P503_compressed.o $(EXTRA_OBJECTS_503) objs/random.o objs/fips202.o
 OBJECTS_610_COMP=objs610comp/P610_compressed.o $(EXTRA_OBJECTS_610) objs/random.o objs/fips202.o
 OBJECTS_751_COMP=objs751comp/P751_compressed.o $(EXTRA_OBJECTS_751) objs/random.o objs/fips202.o
 
-all: lib434 lib503 lib610 lib751 lib434comp lib503comp lib610comp lib751comp tests_p434 tests_p503 tests_p610 tests_p751
+all: lib217 lib434 lib503 lib610 lib751 lib434comp lib503comp lib610comp lib751comp tests_p217 tests_p434 tests_p503 tests_p610 tests_p751
+
+
+objs217/%.o: src/P217/%.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $< -o $@
 
 objs434/%.o: src/P434/%.c
 	@mkdir -p $(@D)
@@ -141,6 +151,9 @@ objs751comp/%.o: src/P751/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 ifeq "$(USE_OPT_LEVEL)" "_GENERIC_"		
+    objs217/fp_generic.o: src/P217/generic/fp_generic.c
+	    $(CC) -c $(CFLAGS) src/P217/generic/fp_generic.c -o objs217/fp_generic.o
+
     objs434/fp_generic.o: src/P434/generic/fp_generic.c
 	    $(CC) -c $(CFLAGS) src/P434/generic/fp_generic.c -o objs434/fp_generic.o
 
@@ -154,6 +167,12 @@ ifeq "$(USE_OPT_LEVEL)" "_GENERIC_"
 	    $(CC) -c $(CFLAGS) src/P751/generic/fp_generic.c -o objs751/fp_generic.o
 else ifeq "$(USE_OPT_LEVEL)" "_FAST_"
 ifeq "$(ARCHITECTURE)" "_AMD64_"		
+    objs217/fp_x64.o: src/P217/AMD64/fp_x64.c
+	    $(CC) -c $(CFLAGS) src/P217/AMD64/fp_x64.c -o objs217/fp_x64.o
+
+    objs217/fp_x64_asm.o: src/P217/AMD64/fp_x64_asm.S
+	    $(CC) -c $(CFLAGS) src/P217/AMD64/fp_x64_asm.S -o objs217/fp_x64_asm.o
+
     objs434/fp_x64.o: src/P434/AMD64/fp_x64.c
 	    $(CC) -c $(CFLAGS) src/P434/AMD64/fp_x64.c -o objs434/fp_x64.o
 
@@ -211,6 +230,12 @@ objs/random.o: src/random/random.c
 objs/fips202.o: src/sha3/fips202.c
 	$(CC) -c $(CFLAGS) src/sha3/fips202.c -o objs/fips202.o
 
+lib217: $(OBJECTS_217)
+	rm -rf lib217 sike217 sidh217
+	mkdir lib217 sike217 sidh217
+	$(AR) lib217/libsidh.a $^
+	$(RANLIB) lib217/libsidh.a
+
 lib434: $(OBJECTS_434)
 	rm -rf lib434 sike434 sidh434
 	mkdir lib434 sike434 sidh434
@@ -266,6 +291,8 @@ objs/%.o: tests/aes/%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@
 
+# TODO: KAT for p217
+
 lib434_for_KATs: $(OBJECTS_434) $(AES_OBJS)
 	$(AR) lib434/libsidh_for_testing.a $^
 	$(RANLIB) lib434/libsidh_for_testing.a
@@ -297,6 +324,12 @@ lib610comp_for_KATs: $(OBJECTS_610_COMP) $(AES_OBJS)
 lib751comp_for_KATs: $(OBJECTS_751_COMP) $(AES_OBJS)
 	$(AR) lib751comp/libsidh_for_testing.a $^
 	$(RANLIB) lib751comp/libsidh_for_testing.a
+
+
+tests_p217: lib217 
+	$(CC) $(CFLAGS) -L./lib217 tests/arith_tests-p217.c tests/test_extras.c -lsidh $(LDFLAGS) -o arith_tests-p217$(ARM_SETTING)
+	$(CC) $(CFLAGS) -L./lib217 tests/test_SIDHp217.c tests/test_extras.c -lsidh $(LDFLAGS) -o sidh217/test_SIDH $(ARM_SETTING)
+	$(CC) $(CFLAGS) -L./lib217 tests/test_SIKEp217.c tests/test_extras.c -lsidh $(LDFLAGS) -o sike217/test_SIKE $(ARM_SETTING)
 
 tests_p434: lib434 lib434comp lib434_for_KATs lib434comp_for_KATs
 	$(CC) $(CFLAGS) -L./lib434 tests/arith_tests-p434.c tests/test_extras.c -lsidh $(LDFLAGS) -o arith_tests-p434 $(ARM_SETTING)
@@ -331,7 +364,14 @@ tests_p751: lib751 lib751comp lib751_for_KATs lib751comp_for_KATs
 	$(CC) $(CFLAGS) -L./lib751 tests/PQCtestKAT_kem751.c tests/rng/rng.c -lsidh_for_testing $(LDFLAGS) -o sike751/PQCtestKAT_kem $(ARM_SETTING)
 	$(CC) $(CFLAGS) -L./lib751comp tests/PQCtestKAT_kem751_compressed.c tests/rng/rng.c -lsidh_for_testing $(LDFLAGS) -o sike751_compressed/PQCtestKAT_kem $(ARM_SETTING)    
 
-check: tests_p434 tests_p503 tests_p610 tests_p751
+check: tests_p217 tests_p434 tests_p503 tests_p610 tests_p751
+
+test217:
+ifeq "$(DO_VALGRIND_CHECK)" "TRUE"
+	valgrind --tool=memcheck --error-exitcode=1 --max-stackframe=20480000 sike217/test_SIKE
+else
+	sike217/test_SIKE
+endif
 
 test434:
 ifeq "$(DO_VALGRIND_CHECK)" "TRUE"
@@ -364,5 +404,5 @@ endif
 .PHONY: clean
 
 clean:
-	rm -rf *.req objs434* objs503* objs610* objs751* objs lib434* lib503* lib610* lib751* sidh434* sidh503* sidh610* sidh751* sike434* sike503* sike610* sike751* arith_tests-*
+	rm -rf *.req objs217* objs434* objs503* objs610* objs751* objs lib217* lib434* lib503* lib610* lib751* sidh217* sidh434* sidh503* sidh610* sidh751* sike217* sike434* sike503* sike610* sike751* arith_tests-*
 
