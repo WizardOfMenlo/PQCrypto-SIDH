@@ -25,11 +25,11 @@
 
 .text
 //***********************************************************************
-//  434-bit multiprecision addition
+//  217-bit multiprecision addition
 //  Operation: c [reg_p3] = a [reg_p1] + b [reg_p2]
 //*********************************************************************** 
-.global fmt(mp_add434_asm)
-fmt(mp_add434_asm): 
+.global fmt(mp_add217_asm)
+fmt(mp_add217_asm): 
   mov    r8, [reg_p1]
   mov    r9, [reg_p1+8]
   mov    r10, [reg_p1+16]
@@ -42,16 +42,6 @@ fmt(mp_add434_asm):
   mov    [reg_p3+8], r9
   mov    [reg_p3+16], r10
   mov    [reg_p3+24], r11
-  
-  mov    r8, [reg_p1+32]
-  mov    r9, [reg_p1+40]
-  mov    r10, [reg_p1+48]
-  adc    r8, [reg_p2+32] 
-  adc    r9, [reg_p2+40] 
-  adc    r10, [reg_p2+48] 
-  mov    [reg_p3+32], r8
-  mov    [reg_p3+40], r9
-  mov    [reg_p3+48], r10
   ret
 
 
@@ -59,74 +49,49 @@ fmt(mp_add434_asm):
 //  Field addition
 //  Operation: c [reg_p3] = a [reg_p1] + b [reg_p2]
 //*********************************************************************** 
-.global fmt(fpadd434_asm)
-fmt(fpadd434_asm):
-  push   r12
-  push   r13
-  push   r14
-  push   r15
+.global fmt(fpadd217_asm)
+fmt(fpadd217_asm):
   push   rbx
-  push   rbp
   
   xor    rax, rax
+  // Read into memory and add
   mov    r8, [reg_p1]
   mov    r9, [reg_p1+8]
   mov    r10, [reg_p1+16]
   mov    r11, [reg_p1+24]
-  mov    r12, [reg_p1+32]
-  mov    r13, [reg_p1+40]
-  mov    r14, [reg_p1+48]
   add    r8, [reg_p2] 
   adc    r9, [reg_p2+8] 
   adc    r10, [reg_p2+16] 
   adc    r11, [reg_p2+24] 
-  adc    r12, [reg_p2+32] 
-  adc    r13, [reg_p2+40] 
-  adc    r14, [reg_p2+48]
 
-  mov    rbx, [rip+fmt(p434x2)]
+  // Read 2 * p217 into memory, subtracting as we go
+  mov    rbx, [rip+fmt(p217x2)]
   sub    r8, rbx
-  mov    rcx, [rip+fmt(p434x2)+8]
+  mov    rcx, [rip+fmt(p217x2)+8]
   sbb    r9, rcx
-  sbb    r10, rcx
-  mov    rdi, [rip+fmt(p434x2)+24]
-  sbb    r11, rdi
-  mov    rsi, [rip+fmt(p434x2)+32]
-  sbb    r12, rsi
-  mov    rbp, [rip+fmt(p434x2)+40]
-  sbb    r13, rbp
-  mov    r15, [rip+fmt(p434x2)+48]
-  sbb    r14, r15
+  mov    rdi, [rip+fmt(p217x2)+16]
+  sbb    r10, rdi
+  mov    rsi, [rip+fmt(p217x2)+24]
+  sbb    r11, rsi
+
+  // If we have carry, rax = 0xFFFFFFFFFFFFFFFF else rax = 0x0000000000000000
+  // Use this to decide whether to add 2p back or not
   sbb    rax, 0
-  
   and    rbx, rax
   and    rcx, rax
   and    rdi, rax
   and    rsi, rax
-  and    rbp, rax
-  and    r15, rax
   
   add    r8, rbx  
   adc    r9, rcx  
   adc    r10, rcx  
   adc    r11, rdi 
-  adc    r12, rsi 
-  adc    r13, rbp   
-  adc    r14, r15
   mov    [reg_p3], r8
   mov    [reg_p3+8], r9 
   mov    [reg_p3+16], r10 
   mov    [reg_p3+24], r11
-  mov    [reg_p3+32], r12 
-  mov    [reg_p3+40], r13 
-  mov    [reg_p3+48], r14
   
-  pop    rbp
   pop    rbx
-  pop    r15
-  pop    r14
-  pop    r13
-  pop    r12
   ret
 
 
