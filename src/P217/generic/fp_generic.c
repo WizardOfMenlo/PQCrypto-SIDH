@@ -4,22 +4,22 @@
 *
 * Website: https://github.com/microsoft/PQCrypto-SIDH
 * Released under MIT license
-*
-* Abstract: portable modular arithmetic for P434
+
+* Abstract: portable modular arithmetic for P217
 *********************************************************************************************/
 
-#include "../P434_internal.h"
+#include "../P217_internal.h"
 #include "../../internal.h"
 
 
 // Global constants
-extern const uint64_t p434[NWORDS64_FIELD];
-extern const uint64_t p434p1[NWORDS64_FIELD]; 
-extern const uint64_t p434x2[NWORDS64_FIELD];  
-extern const uint64_t p434x4[NWORDS64_FIELD];
+extern const uint64_t p217[NWORDS64_FIELD];
+extern const uint64_t p217p1[NWORDS64_FIELD]; 
+extern const uint64_t p217x2[NWORDS64_FIELD];  
+extern const uint64_t p217x4[NWORDS64_FIELD];
 
 
-inline void mp_sub434_p2(const digit_t* a, const digit_t* b, digit_t* c)
+inline void mp_sub217_p2(const digit_t* a, const digit_t* b, digit_t* c)
 { // Multiprecision subtraction with correction with 2*p, c = a-b+2p. 
     unsigned int i, borrow = 0;
 
@@ -29,12 +29,12 @@ inline void mp_sub434_p2(const digit_t* a, const digit_t* b, digit_t* c)
 
     borrow = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(borrow, c[i], ((digit_t*)p434x2)[i], borrow, c[i]); 
+        ADDC(borrow, c[i], ((digit_t*)p217x2)[i], borrow, c[i]); 
     }
 } 
 
 
-inline void mp_sub434_p4(const digit_t* a, const digit_t* b, digit_t* c)
+inline void mp_sub217_p4(const digit_t* a, const digit_t* b, digit_t* c)
 { // Multiprecision subtraction with correction with 4*p, c = a-b+4p. 
     unsigned int i, borrow = 0;
 
@@ -44,15 +44,15 @@ inline void mp_sub434_p4(const digit_t* a, const digit_t* b, digit_t* c)
 
     borrow = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(borrow, c[i], ((digit_t*)p434x4)[i], borrow, c[i]); 
+        ADDC(borrow, c[i], ((digit_t*)p217x4)[i], borrow, c[i]); 
     }
 } 
 
 
-inline void fpadd434(const digit_t* a, const digit_t* b, digit_t* c)
-{ // Modular addition, c = a+b mod p434.
-  // Inputs: a, b in [0, 2*p434-1] 
-  // Output: c in [0, 2*p434-1] 
+inline void fpadd217(const digit_t* a, const digit_t* b, digit_t* c)
+{ // Modular addition, c = a+b mod p217.
+  // Inputs: a, b in [0, 2*p217-1] 
+  // Output: c in [0, 2*p217-1] 
     unsigned int i, carry = 0;
     digit_t mask;
 
@@ -62,21 +62,21 @@ inline void fpadd434(const digit_t* a, const digit_t* b, digit_t* c)
 
     carry = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        SUBC(carry, c[i], ((digit_t*)p434x2)[i], carry, c[i]); 
+        SUBC(carry, c[i], ((digit_t*)p217x2)[i], carry, c[i]); 
     }
     mask = 0 - (digit_t)carry;
 
     carry = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(carry, c[i], ((digit_t*)p434x2)[i] & mask, carry, c[i]); 
+        ADDC(carry, c[i], ((digit_t*)p217x2)[i] & mask, carry, c[i]); 
     }
 } 
 
 
-inline void fpsub434(const digit_t* a, const digit_t* b, digit_t* c)
-{ // Modular subtraction, c = a-b mod p434.
-  // Inputs: a, b in [0, 2*p434-1] 
-  // Output: c in [0, 2*p434-1] 
+inline void fpsub217(const digit_t* a, const digit_t* b, digit_t* c)
+{ // Modular subtraction, c = a-b mod p217.
+  // Inputs: a, b in [0, 2*p217-1] 
+  // Output: c in [0, 2*p217-1] 
     unsigned int i, borrow = 0;
     digit_t mask;
 
@@ -87,51 +87,51 @@ inline void fpsub434(const digit_t* a, const digit_t* b, digit_t* c)
 
     borrow = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(borrow, c[i], ((digit_t*)p434x2)[i] & mask, borrow, c[i]); 
+        ADDC(borrow, c[i], ((digit_t*)p217x2)[i] & mask, borrow, c[i]); 
     }
 }
 
 
-inline void fpneg434(digit_t* a)
-{ // Modular negation, a = -a mod p434.
-  // Input/output: a in [0, 2*p434-1] 
+inline void fpneg217(digit_t* a)
+{ // Modular negation, a = -a mod p217.
+  // Input/output: a in [0, 2*p217-1] 
     unsigned int i, borrow = 0;
 
     for (i = 0; i < NWORDS_FIELD; i++) {
-        SUBC(borrow, ((digit_t*)p434x2)[i], a[i], borrow, a[i]); 
+        SUBC(borrow, ((digit_t*)p217x2)[i], a[i], borrow, a[i]); 
     }
 }
 
 
-void fpdiv2_434(const digit_t* a, digit_t* c)
-{ // Modular division by two, c = a/2 mod p434.
-  // Input : a in [0, 2*p434-1] 
-  // Output: c in [0, 2*p434-1] 
+void fpdiv2_217(const digit_t* a, digit_t* c)
+{ // Modular division by two, c = a/2 mod p217.
+  // Input : a in [0, 2*p217-1] 
+  // Output: c in [0, 2*p217-1] 
     unsigned int i, carry = 0;
     digit_t mask;
         
-    mask = 0 - (digit_t)(a[0] & 1);    // If a is odd compute a+p434
+    mask = 0 - (digit_t)(a[0] & 1);    // If a is odd compute a+p217
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(carry, a[i], ((digit_t*)p434)[i] & mask, carry, c[i]); 
+        ADDC(carry, a[i], ((digit_t*)p217)[i] & mask, carry, c[i]); 
     }
 
     mp_shiftr1(c, NWORDS_FIELD);
 } 
 
 
-void fpcorrection434(digit_t* a)
-{ // Modular correction to reduce field element a in [0, 2*p434-1] to [0, p434-1].
+void fpcorrection217(digit_t* a)
+{ // Modular correction to reduce field element a in [0, 2*p217-1] to [0, p217-1].
     unsigned int i, borrow = 0;
     digit_t mask;
 
     for (i = 0; i < NWORDS_FIELD; i++) {
-        SUBC(borrow, a[i], ((digit_t*)p434)[i], borrow, a[i]); 
+        SUBC(borrow, a[i], ((digit_t*)p217)[i], borrow, a[i]); 
     }
     mask = 0 - (digit_t)borrow;
 
     borrow = 0;
     for (i = 0; i < NWORDS_FIELD; i++) {
-        ADDC(borrow, a[i], ((digit_t*)p434)[i] & mask, borrow, a[i]); 
+        ADDC(borrow, a[i], ((digit_t*)p217)[i] & mask, borrow, a[i]); 
     }
 }
 
@@ -206,11 +206,11 @@ void mp_mul(const digit_t* a, const digit_t* b, digit_t* c, const unsigned int n
 
 
 void rdc_mont(digit_t* ma, digit_t* mc)
-{ // Efficient Montgomery reduction using comba and exploiting the special form of the prime p434.
-  // mc = ma*R^-1 mod p434x2, where R = 2^448.
-  // If ma < 2^448*p434, the output mc is in the range [0, 2*p434-1].
+{ // Efficient Montgomery reduction using comba and exploiting the special form of the prime p217.
+  // mc = ma*R^-1 mod p217x2, where R = 2^256.
+  // If ma < 2^256*p217, the output mc is in the range [0, 2*p217-1].
   // ma is assumed to be in Montgomery representation.
-    unsigned int i, j, carry, count = p434_ZERO_WORDS;
+    unsigned int i, j, carry, count = p217_ZERO_WORDS;
     digit_t UV[2], t = 0, u = 0, v = 0;
 
     for (i = 0; i < NWORDS_FIELD; i++) {
@@ -219,8 +219,8 @@ void rdc_mont(digit_t* ma, digit_t* mc)
 
     for (i = 0; i < NWORDS_FIELD; i++) {
         for (j = 0; j < i; j++) {
-            if (j < (i-p434_ZERO_WORDS+1)) { 
-                MUL(mc[j], ((digit_t*)p434p1)[i-j], UV+1, UV[0]);
+            if (j < (i-p217_ZERO_WORDS+1)) { 
+                MUL(mc[j], ((digit_t*)p217p1)[i-j], UV+1, UV[0]);
                 ADDC(0, UV[0], v, carry, v); 
                 ADDC(carry, UV[1], u, carry, u); 
                 t += carry; 
@@ -241,7 +241,7 @@ void rdc_mont(digit_t* ma, digit_t* mc)
         }
         for (j = i-NWORDS_FIELD+1; j < NWORDS_FIELD; j++) {
             if (j < (NWORDS_FIELD-count)) { 
-                MUL(mc[j], ((digit_t*)p434p1)[i-j], UV+1, UV[0]);
+                MUL(mc[j], ((digit_t*)p217p1)[i-j], UV+1, UV[0]);
                 ADDC(0, UV[0], v, carry, v); 
                 ADDC(carry, UV[1], u, carry, u); 
                 t += carry;

@@ -29,7 +29,6 @@ const uint64_t p217x2[NWORDS64_FIELD]            = { 0xFFFFFFFFFFFFFFFE, 0xF78D7
 const uint64_t p217x4[NWORDS64_FIELD]            = { 0xFFFFFFFFFFFFFFFC, 0xEF1AFFFFFFFFFFFF, 0x8421C84A2BD0D05D, 0x000000000492286E };
 const uint64_t p217x8[NWORDS64_FIELD]            = { 0xFFFFFFFFFFFFFFF8, 0xDE35FFFFFFFFFFFF, 0x0843909457A1A0BB, 0x00000000092450DD };
 const uint64_t p217p1[NWORDS64_FIELD]            = { 0x0000000000000000, 0x7BC6C00000000000, 0xA10872128AF43417, 0x0000000001248A1B };
-// TODO: These generator values
 // Alice's generator values {XPA0 + XPA1*i, XQA0 + xQA1*i, XRA0 + XRA1*i} in GF(p217^2), expressed in Montgomery representation
 const uint64_t A_gen[6*NWORDS64_FIELD]           = { 0x3A02003A41AA5696, 0xC45FFA33715593D5, 0x1A7C6C475E2B2E0C, 0x0000000000DE6060,    // XPA0
                                                      0x8958C2BA90083658, 0xEC55A133854B0C3E, 0x33B603EB1415D88D, 0x00000000007BF805,    // XPA1
@@ -49,6 +48,8 @@ const uint64_t Montgomery_R2[NWORDS64_FIELD]     = { 0x2A732D236E62C233, 0x9B7E8
 // Value one in Montgomery representation = 2^256 mod p217
 const uint64_t Montgomery_one[NWORDS64_FIELD]    = { 0x000000E006430584, 0x0BC5000000000000, 0xEDA1260B181CA0F5, 0x000000000011177F };
 
+
+// TODO: Find strategies
 
 // Fixed parameters for isogeny tree computation
 const unsigned int strat_Alice[MAX_Alice-1] = { 
