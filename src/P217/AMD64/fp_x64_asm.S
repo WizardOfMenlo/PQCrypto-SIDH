@@ -225,92 +225,44 @@ fmt(mp_sub217_p2_asm):
 // z = a x b + c x d (mod p)
 // Inputs: base memory pointers M0 (a,c), M1 (b,d)
 //         bi pre-stored in rdx,
-//         accumulator z in [Z0:Z7], pre-stores a0 x b
-// Output: [Z0:Z7]
+//         accumulator z in [Z0:Z4], pre-stores a0 x b
+// Output: [Z0:Z4]
 // Temps:  regs T0:T1
 /////////////////////////////////////////////////////////////////
-.macro FPDBLMUL448x448 M00, M01, M10, M11, Z0, Z1, Z2, Z3, Z4, Z5, Z6, Z7, T0, T1           
+.macro FPDBLMUL256x256 M00, M01, M10, M11, Z0, Z1, Z2, Z3, Z4, T0, T1           
     mov    rdx, \M11    
-    MULADD64x448 \M01, \Z0, \Z1, \Z2, \Z3, \Z4, \Z5, \Z6, \Z7, \T0, \T1, rax                
-    // [Z1:Z7] <- z = (z0 x p434p1 + z)/2^64
+    MULADD64x256 \M01, \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1, rax                
+    // [Z1:Z4] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z0                 // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z3, \Z4, \Z5, \Z6, \Z7, \T0, \T1
+    MULADD64x64 [rip+fmt(p217p1)+24], \Z3, \Z4, \T0, \T1
     
-    // [Z1:Z7, \Z0] <- z = a01 x a1 + z 
+    // [Z1:Z4, \Z0] <- z = a01 x a1 + z 
     mov    rdx, 8\M10
-    MULADD64x448 \M00, \Z1, \Z2, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \T0, \T1, \Z0           
+    MULADD64x256 \M00, \Z1, \Z2, \Z3, \Z4, \Z0, \T0, \T1, \Z0           
     mov    rdx, 8\M11    
-    MULADD64x448 \M01, \Z1, \Z2, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \T0, \T1, rax        
-    // [Z2:Z7, Z0] <- z = (z0 x p434p1 + z)/2^64
+    MULADD64x256 \M01, \Z1, \Z2, \Z3, \Z4, \Z0, \T0, \T1, rax        
+    // [Z2:Z4, Z0] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z1                 // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z4, \Z5, \Z6, \Z7, \Z0, \T0, \T1
+    MULADD64x64 [rip+fmt(p217p1)+24], \Z4, \Z0, \T0, \T1
     
-    // [Z2:Z7, Z0:Z1] <- z = a02 x a1 + z  
+    // [Z2:Z4, Z0:Z1] <- z = a02 x a1 + z  
     mov    rdx, 16\M10
-    MULADD64x448 \M00, \Z2, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \T0, \T1, \Z1          
+    MULADD64x256 \M00, \Z2, \Z3, \Z4, \Z0, \Z1, \T0, \T1, \Z1          
     mov    rdx, 16\M11    
-    MULADD64x448 \M01, \Z2, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \T0, \T1, rax     
-    // [Z3:Z7, Z0:Z1] <- z = (z0 x p434p1 + z)/2^64
+    MULADD64x256 \M01, \Z2, \Z3, \Z4, \Z0, \Z1, \T0, \T1, rax     
+    // [Z3:Z4, Z0:Z1] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z2                // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z5, \Z6, \Z7, \Z0, \Z1, \T0, \T1
+    MULADD64x64 [rip+fmt(p217p1)+24], \Z0, \Z1, \T0, \T1
     
-    // [Z3:Z7, Z0:Z2] <- z = a03 x a1 + z
+    // [Z3:Z4, Z0:Z2] <- z = a03 x a1 + z
     mov    rdx, 24\M10
-    MULADD64x448 \M00, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \T0, \T1, \Z2          
+    MULADD64x256 \M00, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, \Z2          
     mov    rdx, 24\M11    
-    MULADD64x448 \M01, \Z3, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \T0, \T1, rax     
-    // [Z4:Z7, Z0:Z2] <- z = (z0 x p434p1 + z)/2^64
+    MULADD64x256 \M01, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, rax     
+    // [Z4, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z6, \Z7, \Z0, \Z1, \Z2, \T0, \T1
-    
-    // [Z4:Z7, Z0:Z3] <- z = a04 x a1 + z 
-    mov    rdx, 32\M10
-    MULADD64x448 \M00, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \T0, \T1, \Z3          
-    mov    rdx, 32\M11    
-    MULADD64x448 \M01, \Z4, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \T0, \T1, rax     
-    // [Z5:Z7, Z0:Z3] <- z = (z0 x p434p1 + z)/2^64
-    mov    rdx, \Z4                // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z7, \Z0, \Z1, \Z2, \Z3, \T0, \T1
-    
-    // [Z5:Z7, Z0:Z4] <- z = a05 x a1 + z    
-    mov    rdx, 40\M10
-    MULADD64x448 \M00, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1, \Z4          
-    mov    rdx, 40\M11    
-    MULADD64x448 \M01, \Z5, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1, rax     
-    // [Z6:Z7, Z0:Z4] <- z = (z0 x p434p1 + z)/2^64
-    mov    rdx, \Z5                // rdx <- z0
-    MULADD64x256 [rip+fmt(p434p1)+24], \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1
-    
-    // [Z6:Z7, Z0:Z5] <- z = a06 x a1 + z  
-    mov    rdx, 48\M10
-    MULADD64x448 \M00, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \Z4, \Z5, \T0, \T1, \Z5          
-    mov    rdx, 48\M11    
-    MULADD64x448 \M01, \Z6, \Z7, \Z0, \Z1, \Z2, \Z3, \Z4, \Z5, \T0, \T1, rax 
-    pop    \T1
-    mov    [rcx], \Z7     
-    // [Z7, Z0:Z5] <- z = (z0 x p434p1 + z)/2^64
-    mov    rdx, \Z6                // rdx <- z0
-    //MULADD64x256 [rip+fmt(p434p1)+24], \Z1, \Z2, \Z3, \Z4, \Z5, \T0, \T1 
-    mulx   \Z6, \Z7, [rip+fmt(p434p1)+24]
+    MULADD64x64 [rip+fmt(p217p1)+24], \Z1, \Z2, \T0, \T1
     pop    \T0
-    adox   \Z1, \Z7
-    adox   \Z2, \Z6  
-    mov    [rcx+8], \Z0  
-    mulx   \Z6, \Z7, [rip+fmt(p434p1)+32]
-    mov    [rcx+16], \Z1 
-    adcx   \Z2, \Z7
-    adox   \Z3, \Z6   
-    mov    [rcx+24], \Z2  
-    mulx   \Z2, \Z1, [rip+fmt(p434p1)+40]
-    pop    \Z7
-    adcx   \Z3, \Z1
-    adox   \Z4, \Z2   
-    mov    [rcx+32], \Z3   
-    mulx   \Z2, \Z1, [rip+fmt(p434p1)+48] 
-    pop    \Z6        
-    adcx   \Z4, \Z1
-    adox   \Z5, \Z2
-    adc    \Z5, 0
 .endm
 
 
