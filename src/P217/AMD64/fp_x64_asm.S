@@ -5,7 +5,7 @@
 // Website: https://github.com/microsoft/PQCrypto-SIDH
 // Released under MIT license 
 //
-// Abstract: field arithmetic in x64 assembly for P434 on Linux
+// Abstract: field arithmetic in x64 assembly for P217 on Linux
 //*******************************************************************************************
 
 .intel_syntax noprefix 
@@ -378,7 +378,7 @@ fmt(fp2mul217_c1_asm):
 // Output: [Z0:Z4]
 // Temps:  regs T0:T1
 /////////////////////////////////////////////////////////////////
-.macro FPMUL448x448 M0, M1, Z0, Z1, Z2, Z3, Z4, T0, T1           
+.macro FPMUL256x256 M0, M1, Z0, Z1, Z2, Z3, Z4, T0, T1           
     // [Z1:Z4] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z0                 // rdx <- z0
     MULADD64x64 [rip+fmt(p217p1)+24], \Z3, \Z4, \T0, \T1
@@ -400,7 +400,7 @@ fmt(fp2mul217_c1_asm):
     // [Z3:Z4, Z0:Z2] <- z = a03 x a1 + z
     mov    rdx, 24\M0
     MULADD64x256 \M1, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, \Z2
-    // [Z4:Z7, Z0:Z2] <- z = (z0 x p434p1 + z)/2^64
+    // [Z4:Z7, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
     MULADD64x256 [rip+fmt(p217)+24], \Z1, \Z2, \T0, \T1
 .endm
@@ -412,98 +412,68 @@ fmt(fp2mul217_c1_asm):
 //  Inputs: a = [a1, a0] stored in [reg_p1] 
 //  Output: c stored in [reg_p2]
 //***********************************************************************
-.global fmt(fp2sqr434_c0_asm)
-fmt(fp2sqr434_c0_asm):   
+.global fmt(fp2sqr217_c0_asm)
+fmt(fp2sqr217_c0_asm):   
     push   r12 
 
-	// a0 + a1
+	// [r8:r11] = a0 + a1
 	mov    r8, [reg_p1]
 	mov    r9, [reg_p1+8]
 	mov    r10, [reg_p1+16]
 	mov    r11, [reg_p1+24]
-	mov    r12, [reg_p1+32]
-	add    r8, [reg_p1+56]
+	add    r8, [reg_p1+32]
     push   r13
-	adc    r9, [reg_p1+64]
-	adc    r10, [reg_p1+72]
-    push   r14 
-	adc    r11, [reg_p1+80]
+	adc    r9, [reg_p1+40]
+	adc    r10, [reg_p1+48]
+	adc    r11, [reg_p1+56]
 	adc    r12, [reg_p1+88]
-	mov    r13, [reg_p1+40]
-	mov    r14, [reg_p1+48]
-	adc    r13, [reg_p1+96]
-	adc    r14, [reg_p1+104]
+
+        // Store to p2
 	mov    [reg_p2], r8
 	mov    [reg_p2+8], r9
 	mov    [reg_p2+16], r10
 	mov    [reg_p2+24], r11
-	mov    [reg_p2+32], r12
-	mov    [reg_p2+40], r13
-	mov    [reg_p2+48], r14
 	
-	// a0 - a1 + 4xp434
+	// a0 - a1 + 4xp217
 	mov    rax, [reg_p1]
 	mov    r10, [reg_p1+8]
 	mov    r12, [reg_p1+16]
 	mov    r13, [reg_p1+24]
-	mov    r14, [reg_p1+32]
-	sub    rax, [reg_p1+56]
-	sbb    r10, [reg_p1+64]
-	sbb    r12, [reg_p1+72] 
-    push   r15 
-	sbb    r13, [reg_p1+80]
-	sbb    r14, [reg_p1+88]
-	mov    r15, [reg_p1+40]
-	mov    rcx, [reg_p1+48]
-	sbb    r15, [reg_p1+96]
-	sbb    rcx, [reg_p1+104]
-	add    rax, [rip+fmt(p434x4)]                    
-	mov    rdx, [rip+fmt(p434x4)+8]
-	adc    r10, rdx
-	adc    r12, rdx
-	adc    r13, [rip+fmt(p434x4)+24]
-	adc    r14, [rip+fmt(p434x4)+32]
-	adc    r15, [rip+fmt(p434x4)+40]
-	adc    rcx, [rip+fmt(p434x4)+48]
-	mov    [reg_p2+56], rax 
+	sub    rax, [reg_p1+32]
+	sbb    r10, [reg_p1+40]
+	sbb    r12, [reg_p1+48] 
+	sbb    r13, [reg_p1+56]
+
+	add    rax, [rip+fmt(p217x4)]                    
+	adc    r10, [rip+fmt(p217x4)+8]
+	adc    r12, [rip+fmt(p217x4)+16]
+	adc    r13, [rip+fmt(p217x4)+24]
+	mov    [reg_p2+32], rax 
     
-    // [r8:r15] <- z = a00 x a1
+    // [r8:r12] <- z = a00 x a1
     mov    rdx, r8
     mulx   r9, r8, rax                 
-	mov    [reg_p2+64], r10 
+	mov    [reg_p2+40], r10 
     xor    rax, rax   
     push   rbx  
     mulx   r10, r11, r10  
-	mov    [reg_p2+72], r12 
+	mov    [reg_p2+48], r12 
     adox   r9, r11        
     mulx   r11, r12, r12 
-	mov    [reg_p2+80], r13  
+	mov    [reg_p2+56], r13  
     adox   r10, r12        
     mulx   r12, r13, r13 
-	mov    [reg_p2+88], r14  
     adox   r11, r13       
-    mulx   r13, r14, r14 
-	mov    [reg_p2+96], r15  
-    adox   r12, r14      
-    mulx   r14, r15, r15  
-	mov    [reg_p2+104], rcx 
-    adox   r13, r15      
-    mulx   r15, rbx, rcx  
-    adox   r14, rbx 
-    adox   r15, rax 
+    adox   r12, rax 
            
-	FPMUL448x448 [reg_p2], [reg_p2+56], r8, r9, r10, r11, r12, r13, r14, r15, rbx, rcx
+	FPMUL256x256 [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rcx
            
-    mov    [reg_p2], r15   
+    // TODO: Understand this part
+    mov    [reg_p2], r11
     mov    [reg_p2+8], r8         
     mov    [reg_p2+16], r9         
     mov    [reg_p2+24], r10      
-    mov    [reg_p2+32], r11      
-    mov    [reg_p2+40], r12      
-    mov    [reg_p2+48], r13
     pop    rbx
-    pop    r15
-    pop    r14
     pop    r13
     pop    r12
     ret
@@ -515,67 +485,48 @@ fmt(fp2sqr434_c0_asm):
 //  Inputs: a = [a1, a0] stored in [reg_p1] 
 //  Output: c stored in [reg_p2]
 //***********************************************************************
-.global fmt(fp2sqr434_c1_asm)
-fmt(fp2sqr434_c1_asm):  
+.global fmt(fp2sqr217_c1_asm)
+fmt(fp2sqr217_c1_asm):  
     push   r12
 	
 	mov    r8, [reg_p1]
 	mov    r9, [reg_p1+8]
 	mov    r10, [reg_p1+16]
 	mov    r11, [reg_p1+24]
-	mov    r12, [reg_p1+32]
 	add    r8, r8
     push   r13 
 	adc    r9, r9
 	adc    r10, r10
-    push   r14 
 	adc    r11, r11 
-	mov    r13, [reg_p1+40] 
-	mov    r14, [reg_p1+48] 
-	adc    r12, r12    
-    push   r15 
-	adc    r13, r13  
     push   rbx 
-	adc    r14, r14
-	sub    rsp, 56
+	sub    rsp, 32
+        // mov [rsp+8] r8 (No! We precompute it because we are cool!)
 	mov    [rsp+8], r9
 	mov    [rsp+16], r10
     
-    // [r8:r15] <- z = a00 x a1
+    // [r8:r12] <- z = a00 x a1
     mov    rdx, r8
-    mulx   r9, r8, [reg_p1+56] 
+    mulx   r9, r8, [reg_p1+32] 
 	mov    [rsp+24], r11   
     xor    rax, rax 
-    mulx   r10, r11, [reg_p1+64]
+    mulx   r10, r11, [reg_p1+40]
 	mov    [rsp+32], r12
     adox   r9, r11        
-    mulx   r11, r12, [reg_p1+72]
+    mulx   r11, r12, [reg_p1+48]
 	mov    [rsp+40], r13
     adox   r10, r12        
-    mulx   r12, r13, [reg_p1+80] 
-	mov    [rsp+48], r14
+    mulx   r12, r13, [reg_p1+56] 
     adox   r11, r13       
-    mulx   r13, r14, [reg_p1+88]
-    adox   r12, r14      
-    mulx   r14, r15, [reg_p1+96]   
-    adox   r13, r15      
-    mulx   r15, rbx, [reg_p1+104]  
-    adox   r14, rbx 
-    adox   r15, rax 
+    adox   r12, rax
 
-	FPMUL448x448 [rsp], [reg_p1+56], r8, r9, r10, r11, r12, r13, r14, r15, rbx, rcx
+	FPMUL256x256 [rsp], [reg_p1+32], r8, r9, r10, r11, r12, rbx, rcx
 
-	add    rsp, 56
-    mov    [reg_p2], r15 
+	add    rsp, 32
+    mov    [reg_p2], r12
     mov    [reg_p2+8], r8         
     mov    [reg_p2+16], r9         
     mov    [reg_p2+24], r10      
-    mov    [reg_p2+32], r11      
-    mov    [reg_p2+40], r12      
-    mov    [reg_p2+48], r13
     pop    rbx
-    pop    r15
-    pop    r14
     pop    r13
     pop    r12
     ret
@@ -587,11 +538,11 @@ fmt(fp2sqr434_c1_asm):
 //  Inputs: a stored in [reg_p1], b stored in [reg_p2] 
 //  Output: c stored in [reg_p3]
 //***********************************************************************
-.global fmt(fpmul434_asm)
-fmt(fpmul434_asm): 
+.global fmt(fpmul217_asm)
+fmt(fpmul217_asm): 
     mov    rcx, reg_p3
      
-    // [r8:r15] <- z = a x b0
+    // [r8:r12] <- z = a x b0
     mov    rdx, [reg_p2]
     mulx   r9, r8, [reg_p1]  
     push   r12
@@ -600,34 +551,21 @@ fmt(fpmul434_asm):
     push   r13 
     adox   r9, r11        
     mulx   r11, r12, [reg_p1+16]
-    push   r14 
     adox   r10, r12        
     mulx   r12, r13, [reg_p1+24]   
-    push   r15 
     adox   r11, r13       
-    mulx   r13, r14, [reg_p1+32]    
-    push   rbx   
-    adox   r12, r14      
-    mulx   r14, r15, [reg_p1+40]  
-    push   rbp
-    adox   r13, r15      
-    mulx   r15, rbx, [reg_p1+48]  
-    adox   r14, rbx 
-    adox   r15, rax 
+    adox   r12, rax 
+    push rbx
+    push rbp
 
-	FPMUL448x448 [reg_p2], [reg_p1], r8, r9, r10, r11, r12, r13, r14, r15, rbx, rbp
+	FPMUL256x256 [reg_p2], [reg_p1], r8, r9, r10, r11, r12, rbx, rbp
 
-    mov    [rcx], r15 
+    mov    [rcx], r12
     mov    [rcx+8], r8         
     mov    [rcx+16], r9         
     mov    [rcx+24], r10      
-    mov    [rcx+32], r11      
-    mov    [rcx+40], r12      
-    mov    [rcx+48], r13
     pop    rbp
     pop    rbx
-    pop    r15
-    pop    r14
     pop    r13
     pop    r12
     ret
