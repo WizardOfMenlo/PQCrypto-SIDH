@@ -99,119 +99,87 @@ fmt(fpadd217_asm):
 //  Field subtraction
 //  Operation: c [reg_p3] = a [reg_p1] - b [reg_p2]
 //*********************************************************************** 
-.global fmt(fpsub434_asm)
-fmt(fpsub434_asm):
+.global fmt(fpsub217_asm)
+fmt(fpsub217_asm):
   push   r12
-  push   r13
-  push   r14
   
   xor    rax, rax
+  
+  // Read into memory, and subtract
   mov    r8, [reg_p1]
   mov    r9, [reg_p1+8]
   mov    r10, [reg_p1+16]
   mov    r11, [reg_p1+24]
-  mov    r12, [reg_p1+32]
-  mov    r13, [reg_p1+40]
-  mov    r14, [reg_p1+48]
   sub    r8, [reg_p2] 
   sbb    r9, [reg_p2+8] 
   sbb    r10, [reg_p2+16] 
   sbb    r11, [reg_p2+24] 
-  sbb    r12, [reg_p2+32] 
-  sbb    r13, [reg_p2+40] 
-  sbb    r14, [reg_p2+48]
+
+  // Subtract the borrow (same trick as before)
   sbb    rax, 0
   
-  mov    rcx, [rip+fmt(p434x2)]
-  mov    rdi, [rip+fmt(p434x2)+8]
-  mov    rsi, [rip+fmt(p434x2)+24]
+
+  // Read into mem
+  mov    rcx, [rip+fmt(p217x2)]
+  mov    rdi, [rip+fmt(p217x2)+8]
+  mov    rsi, [rip+fmt(p217x2)+16]
+  mov    r12, [rip+fmt(p217x2)+24]
+  
   and    rcx, rax
   and    rdi, rax
   and    rsi, rax  
+  and    r12, rax  
+
   add    r8, rcx  
   adc    r9, rdi  
-  adc    r10, rdi  
-  adc    r11, rsi 
+  adc    r10, rsi  
+  adc    r11, r12 
+
+  // Write to mem
   mov    [reg_p3], r8
   mov    [reg_p3+8], r9 
   mov    [reg_p3+16], r10 
   mov    [reg_p3+24], r11 
-  setc   cl  
 
-  mov    r8, [rip+fmt(p434x2)+32]
-  mov    rdi, [rip+fmt(p434x2)+40]
-  mov    rsi, [rip+fmt(p434x2)+48]
-  and    r8, rax
-  and    rdi, rax
-  and    rsi, rax  
-  bt     rcx, 0  
-  adc    r12, r8 
-  adc    r13, rdi   
-  adc    r14, rsi
-  mov    [reg_p3+32], r12 
-  mov    [reg_p3+40], r13
-  mov    [reg_p3+48], r14
-  
-  pop    r14
-  pop    r13
   pop    r12
   ret
 
 
 ///////////////////////////////////////////////////////////////// MACRO
-.macro SUB434_PX  P0
-  push   r12
-  push   r13
-  
+.macro SUB217_PX  P0
   mov    r8, [reg_p1]
   mov    r9, [reg_p1+8]
   mov    r10, [reg_p1+16]
   mov    r11, [reg_p1+24]
-  mov    r12, [reg_p1+32]
-  mov    r13, [reg_p1+40]
-  mov    rcx, [reg_p1+48]
   sub    r8, [reg_p2] 
   sbb    r9, [reg_p2+8] 
   sbb    r10, [reg_p2+16] 
   sbb    r11, [reg_p2+24] 
-  sbb    r12, [reg_p2+32] 
-  sbb    r13, [reg_p2+40] 
-  sbb    rcx, [reg_p2+48]
-
+//TODO: We reuse a register here, do we need to?
   mov    rax, [rip+\P0]
   mov    rdi, [rip+\P0+8]
-  mov    rsi, [rip+\P0+24]
+  mov    rsi, [rip+\P0+16]
   add    r8, rax
-  mov    rax, [rip+\P0+32]  
+  mov    rax, [rip+\P0+24]  
   adc    r9, rdi  
-  adc    r10, rdi 
-  adc    r11, rsi 
-  mov    rdi, [rip+\P0+40]
-  mov    rsi, [rip+\P0+48]
-  adc    r12, rax   
-  adc    r13, rdi  
-  adc    rcx, rsi
+  adc    r10, rsi 
+  adc    r11, rax 
   mov    [reg_p3], r8
   mov    [reg_p3+8], r9 
   mov    [reg_p3+16], r10 
   mov    [reg_p3+24], r11
-  mov    [reg_p3+32], r12 
-  mov    [reg_p3+40], r13
-  mov    [reg_p3+48], rcx
   
-  pop    r13
-  pop    r12
 .endm
 
 
 //***********************************************************************
-//  Multiprecision subtraction with correction with 2*p434
-//  Operation: c [reg_p3] = a [reg_p1] - b [reg_p2] + 2*p434
+//  Multiprecision subtraction with correction with 2*p217
+//  Operation: c [reg_p3] = a [reg_p1] - b [reg_p2] + 2*p217
 //*********************************************************************** 
-.global fmt(mp_sub434_p2_asm)
-fmt(mp_sub434_p2_asm):
+.global fmt(mp_sub217_p2_asm)
+fmt(mp_sub217_p2_asm):
 
-  SUB434_PX  fmt(p434x2)
+  SUB217_PX  fmt(p217x2)
   ret
 
 
@@ -222,11 +190,11 @@ fmt(mp_sub434_p2_asm):
 // z = a x bi + z
 // Inputs: base memory pointer M1 (a),
 //         bi pre-stored in rdx,
-//         accumulator z in [Z0:Z4] or [Z0:Z7]
-// Output: [Z0:Z4] or [Z0:Z7]
+//         accumulator z in [Z0:Z1] or [Z0:Z4]
+// Output: [Z0:Z1] or [Z0:Z4]
 // Temps:  regs T0:T1
 /////////////////////////////////////////////////////////////////
-.macro MULADD64x448 M1, Z0, Z1, Z2, Z3, Z4, Z5, Z6, Z7, T0, T1, C
+.macro MULADD64x256 M1, Z0, Z1, Z2, Z3, Z4, T0, T1, C
     mulx   \T0, \T1, \M1     // A0*B0
     xor    \C, \C
     adox   \Z0, \T1
@@ -240,34 +208,16 @@ fmt(mp_sub434_p2_asm):
     mulx   \T0, \T1, 24\M1   // A0*B3          
     adcx   \Z3, \T1
     adox   \Z4, \T0
-    mulx   \T0, \T1, 32\M1   // A0*B4          
-    adcx   \Z4, \T1
-    adox   \Z5, \T0
-    mulx   \T0, \T1, 40\M1   // A0*B5          
-    adcx   \Z5, \T1
-    adox   \Z6, \T0
-    mulx   \T0, \T1, 48\M1   // A0*B6          
-    adcx   \Z6, \T1
-    adox   \Z7, \T0
-    adc    \Z7, 0    
+    adc    \Z4, 0    
 .endm
 
 
-.macro MULADD64x256 M1, Z0, Z1, Z2, Z3, Z4, T0, T1
+.macro MULADD64x64 M1, Z0, Z1, T0, T1
     mulx   \T0, \T1, \M1     // A0*B0
     xor    rax, rax
     adox   \Z0, \T1
     adox   \Z1, \T0  
-    mulx   \T0, \T1, 8\M1    // A0*B1
-    adcx   \Z1, \T1
-    adox   \Z2, \T0    
-    mulx   \T0, \T1, 16\M1   // A0*B2
-    adcx   \Z2, \T1
-    adox   \Z3, \T0
-    mulx   \T0, \T1, 24\M1   // A0*B3          
-    adcx   \Z3, \T1
-    adox   \Z4, \T0
-    adcx   \Z4, rax    
+    adcx   \Z1, rax    
 .endm
 
 
