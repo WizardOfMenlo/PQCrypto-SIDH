@@ -259,9 +259,18 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M00, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, \Z2          
     mov    rdx, 24\M11    
     MULADD64x256 \M01, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, rax     
+    
+    pop    \T1
+    mov    [rcx] \Z4
+
     // [Z4, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z1, \Z2, \T0, \T1
+    //MULADD64x64 [rip+fmt(p217p1)+24], \Z1, \Z2, \T0, \T1
+    mulx   \Z3, \Z4, [rip+fmt(p217p1)+24]
+    adox   \Z1, \Z4
+    adox   \Z2, \Z3  
+    adcx   \Z2, 0
+    mov [rcx+8] \Z0
     pop    \T0
 .endm
 
@@ -314,10 +323,10 @@ fmt(fp2mul217_c0_asm):
     push   rbp  
 
 	FPDBLMUL256x256 [reg_p1], [reg_p1+32], [reg_p2], [rcx], r8, r9, r10, r11, r12, rbx, rbp
+
+    mov [rcx+16] r9
+    mov [rcx+24] r10
 	           
-    // TODO: What are these?
-    mov    [rcx+40], r12      
-    mov    [rcx+48], r13
     pop    r13
     pop    r12
     ret
@@ -350,9 +359,8 @@ fmt(fp2mul217_c1_asm):
 
 	FPDBLMUL256x256 [reg_p1+32], [reg_p1], [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rbp
                              
-    // TODO: Check this
-    mov    [rcx+40], r12      
-    mov    [rcx+48], r13
+    mov    [rcx+16], r9
+    mov    [rcx+24], r10
     pop    r13
     pop    r12
     ret
