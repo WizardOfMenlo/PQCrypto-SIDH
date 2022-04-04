@@ -84,8 +84,8 @@ fmt(fpadd217_asm):
   
   add    r8, rbx  
   adc    r9, rcx  
-  adc    r10, rcx  
-  adc    r11, rdi 
+  adc    r10, rdi  
+  adc    r11, rsi 
   mov    [reg_p3], r8
   mov    [reg_p3+8], r9 
   mov    [reg_p3+16], r10 
@@ -212,12 +212,18 @@ fmt(mp_sub217_p2_asm):
 .endm
 
 
-.macro MULADD64x64 M1, Z0, Z1, T0, T1
+.macro MULADD64x192 M1, Z0, Z1, Z2, Z3, T0, T1
     mulx   \T0, \T1, \M1     // A0*B0
     xor    rax, rax
     adox   \Z0, \T1
     adox   \Z1, \T0  
-    adcx   \Z1, rax    
+    mulx   \T0, \T1, 8\M1
+    adcx   \Z1, \T1
+    adox   \Z2, \T0  
+    mulx   \T0, \T1, 16\M1
+    adcx   \Z2, \T1
+    adox   \Z3, \T0
+    adcx   \Z3, rax
 .endm
 
 
@@ -234,7 +240,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1, rax                
     // [Z1:Z4] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z0                 // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z3, \Z4, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z3, \Z4, \Z0, \Z1, \T0, \T1
     
     // [Z1:Z4, \Z0] <- z = a01 x a1 + z 
     mov    rdx, 8\M10
@@ -243,7 +249,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z1, \Z2, \Z3, \Z4, \Z0, \T0, \T1, rax        
     // [Z2:Z4, Z0] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z1                 // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z4, \Z0, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z4, \Z0, \Z1, \Z2, \T0, \T1
     
     // [Z2:Z4, Z0:Z1] <- z = a02 x a1 + z  
     mov    rdx, 16\M10
@@ -252,7 +258,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z2, \Z3, \Z4, \Z0, \Z1, \T0, \T1, rax     
     // [Z3:Z4, Z0:Z1] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z2                // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z0, \Z1, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z0, \Z1, \Z2, \Z3, \T0, \T1
     
     // [Z3:Z4, Z0:Z2] <- z = a03 x a1 + z
     mov    rdx, 24\M10
@@ -261,16 +267,18 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, rax     
     
     pop    \T1
-    mov    [rcx] \Z4
+    mov    [rcx], \Z4
 
+    xor rax, rax
     // [Z4, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
-    //MULADD64x64 [rip+fmt(p217p1)+24], \Z1, \Z2, \T0, \T1
-    mulx   \Z3, \Z4, [rip+fmt(p217p1)+24]
+    // TODO: Unwrap this with new method
+    //MULADD64x192 [rip+fmt(p217p1)+8], \Z1, \Z2, \T0, \T1
+    mulx   \Z3, \Z4, [rip+fmt(p217p1)+8]
     adox   \Z1, \Z4
     adox   \Z2, \Z3  
-    adcx   \Z2, 0
-    mov [rcx+8] \Z0
+    adcx   \Z2, rax
+    mov [rcx+8], \Z0
     pop    \T0
 .endm
 
@@ -286,30 +294,30 @@ fmt(mp_sub217_p2_asm):
 fmt(fp2mul217_c0_asm):   
     push   r12 
     mov    rcx, reg_p3
-	
-	// [rcx0:rcx24] <- 8*p - b1
+        
+        // [rcx0:rcx24] <- 8*p - b1
         // Load into mem
-	mov    r8, [rip+fmt(p217x8)]  
-	mov    r9, [rip+fmt(p217x8)+8]   
-	mov    r10, [rip+fmt(p217x8)+16]                
-	mov    r11, [rip+fmt(p217x8)+24]
-	mov    rax, [reg_p2+32]
-	mov    rdx, [reg_p2+40]
-	sub    r8, rax
+        mov    r8, [rip+fmt(p217x8)]  
+        mov    r9, [rip+fmt(p217x8)+8]   
+        mov    r10, [rip+fmt(p217x8)+16]                
+        mov    r11, [rip+fmt(p217x8)+24]
+        mov    rax, [reg_p2+32]
+        mov    rdx, [reg_p2+40]
+        sub    r8, rax
     push   r13 
-	sbb    r9, rdx
-	mov    rax, [reg_p2+48]
-	mov    rdx, [reg_p2+56]
-	sbb    r10, rax
-	sbb    r11, rdx
-	mov    [rcx], r8
-	mov    [rcx+8], r9
-	mov    [rcx+16], r10
+        sbb    r9, rdx
+        mov    rax, [reg_p2+48]
+        mov    rdx, [reg_p2+56]
+        sbb    r10, rax
+        sbb    r11, rdx
+        mov    [rcx], r8
+        mov    [rcx+8], r9
+        mov    [rcx+16], r10
     
     // [r8:r12] <- z = a0 x b00 - a1 x b10
     mov    rdx, [reg_p2]
     mulx   r9, r8, [reg_p1] 
-	mov    [rcx+24], r11      
+        mov    [rcx+24], r11      
     xor    rax, rax 
     mulx   r10, r11, [reg_p1+8] 
     adox   r9, r11        
@@ -322,11 +330,11 @@ fmt(fp2mul217_c0_asm):
     push   rbx 
     push   rbp  
 
-	FPDBLMUL256x256 [reg_p1], [reg_p1+32], [reg_p2], [rcx], r8, r9, r10, r11, r12, rbx, rbp
+        FPDBLMUL256x256 [reg_p1], [reg_p1+32], [reg_p2], [rcx], r8, r9, r10, r11, r12, rbx, rbp
 
-    mov [rcx+16] r9
-    mov [rcx+24] r10
-	           
+    mov    [rcx+16], r9
+    mov    [rcx+24], r10
+                   
     pop    r13
     pop    r12
     ret
@@ -357,7 +365,7 @@ fmt(fp2mul217_c1_asm):
     adox   r11, r13       
     adox   r12, rax 
 
-	FPDBLMUL256x256 [reg_p1+32], [reg_p1], [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rbp
+        FPDBLMUL256x256 [reg_p1+32], [reg_p1], [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rbp
                              
     mov    [rcx+16], r9
     mov    [rcx+24], r10
@@ -389,28 +397,28 @@ fmt(fp2mul217_c1_asm):
 .macro FPMUL256x256 M0, M1, Z0, Z1, Z2, Z3, Z4, T0, T1           
     // [Z1:Z4] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z0                 // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z3, \Z4, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z1, \Z2, \Z3, \Z4, \T0, \T1
     
     // [Z1:Z4, \Z0] <- z = a01 x a1 + z 
     mov    rdx, 8\M0
     MULADD64x256 \M1, \Z1, \Z2, \Z3, \Z4, \Z0, \T0, \T1, \Z0
     // [Z2:Z4, Z0] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z1                 // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z4, \Z0, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z2, \Z3, \Z4, \Z0, \T0, \T1
     
     // [Z2:Z4, Z0:Z1] <- z = a02 x a1 + z  
     mov    rdx, 16\M0
     MULADD64x256 \M1, \Z2, \Z3, \Z4, \Z0, \Z1, \T0, \T1, \Z1
     // [Z3:Z4, Z0:Z1] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z2                // rdx <- z0
-    MULADD64x64 [rip+fmt(p217p1)+24], \Z0, \Z1, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z3, \Z4, \Z0, \Z1, \T0, \T1
     
     // [Z3:Z4, Z0:Z2] <- z = a03 x a1 + z
     mov    rdx, 24\M0
     MULADD64x256 \M1, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, \Z2
-    // [Z4:Z7, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
+    // [Z4, Z0:Z3] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
-    MULADD64x256 [rip+fmt(p217)+24], \Z1, \Z2, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z4, \Z0, \Z1, \Z2, \T0, \T1
 .endm
 
 
@@ -424,57 +432,57 @@ fmt(fp2mul217_c1_asm):
 fmt(fp2sqr217_c0_asm):   
     push   r12 
 
-	// [r8:r11] = a0 + a1
-	mov    r8, [reg_p1]
-	mov    r9, [reg_p1+8]
-	mov    r10, [reg_p1+16]
-	mov    r11, [reg_p1+24]
-	add    r8, [reg_p1+32]
+        // [r8:r11] = a0 + a1
+        mov    r8, [reg_p1]
+        mov    r9, [reg_p1+8]
+        mov    r10, [reg_p1+16]
+        mov    r11, [reg_p1+24]
+        add    r8, [reg_p1+32]
     push   r13
-	adc    r9, [reg_p1+40]
-	adc    r10, [reg_p1+48]
-	adc    r11, [reg_p1+56]
-	adc    r12, [reg_p1+88]
+        adc    r9, [reg_p1+40]
+        adc    r10, [reg_p1+48]
+        adc    r11, [reg_p1+56]
+        adc    r12, [reg_p1+88]
 
         // Store to p2
-	mov    [reg_p2], r8
-	mov    [reg_p2+8], r9
-	mov    [reg_p2+16], r10
-	mov    [reg_p2+24], r11
-	
-	// a0 - a1 + 4xp217
-	mov    rax, [reg_p1]
-	mov    r10, [reg_p1+8]
-	mov    r12, [reg_p1+16]
-	mov    r13, [reg_p1+24]
-	sub    rax, [reg_p1+32]
-	sbb    r10, [reg_p1+40]
-	sbb    r12, [reg_p1+48] 
-	sbb    r13, [reg_p1+56]
+        mov    [reg_p2], r8
+        mov    [reg_p2+8], r9
+        mov    [reg_p2+16], r10
+        mov    [reg_p2+24], r11
+        
+        // a0 - a1 + 4xp217
+        mov    rax, [reg_p1]
+        mov    r10, [reg_p1+8]
+        mov    r12, [reg_p1+16]
+        mov    r13, [reg_p1+24]
+        sub    rax, [reg_p1+32]
+        sbb    r10, [reg_p1+40]
+        sbb    r12, [reg_p1+48] 
+        sbb    r13, [reg_p1+56]
 
-	add    rax, [rip+fmt(p217x4)]                    
-	adc    r10, [rip+fmt(p217x4)+8]
-	adc    r12, [rip+fmt(p217x4)+16]
-	adc    r13, [rip+fmt(p217x4)+24]
-	mov    [reg_p2+32], rax 
+        add    rax, [rip+fmt(p217x4)]                    
+        adc    r10, [rip+fmt(p217x4)+8]
+        adc    r12, [rip+fmt(p217x4)+16]
+        adc    r13, [rip+fmt(p217x4)+24]
+        mov    [reg_p2+32], rax 
     
     // [r8:r12] <- z = a00 x a1
     mov    rdx, r8
     mulx   r9, r8, rax                 
-	mov    [reg_p2+40], r10 
+        mov    [reg_p2+40], r10 
     xor    rax, rax   
     push   rbx  
     mulx   r10, r11, r10  
-	mov    [reg_p2+48], r12 
+        mov    [reg_p2+48], r12 
     adox   r9, r11        
     mulx   r11, r12, r12 
-	mov    [reg_p2+56], r13  
+        mov    [reg_p2+56], r13  
     adox   r10, r12        
     mulx   r12, r13, r13 
     adox   r11, r13       
     adox   r12, rax 
            
-	FPMUL256x256 [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rcx
+        FPMUL256x256 [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rcx
            
     // TODO: Understand this part
     mov    [reg_p2], r11
@@ -496,40 +504,40 @@ fmt(fp2sqr217_c0_asm):
 .global fmt(fp2sqr217_c1_asm)
 fmt(fp2sqr217_c1_asm):  
     push   r12
-	
-	mov    r8, [reg_p1]
-	mov    r9, [reg_p1+8]
-	mov    r10, [reg_p1+16]
-	mov    r11, [reg_p1+24]
-	add    r8, r8
+        
+        mov    r8, [reg_p1]
+        mov    r9, [reg_p1+8]
+        mov    r10, [reg_p1+16]
+        mov    r11, [reg_p1+24]
+        add    r8, r8
     push   r13 
-	adc    r9, r9
-	adc    r10, r10
-	adc    r11, r11 
+        adc    r9, r9
+        adc    r10, r10
+        adc    r11, r11 
     push   rbx 
-	sub    rsp, 32
+        sub    rsp, 32
         // mov [rsp+8] r8 (No! We precompute it because we are cool!)
-	mov    [rsp+8], r9
-	mov    [rsp+16], r10
+        mov    [rsp+8], r9
+        mov    [rsp+16], r10
     
     // [r8:r12] <- z = a00 x a1
     mov    rdx, r8
     mulx   r9, r8, [reg_p1+32] 
-	mov    [rsp+24], r11   
+        mov    [rsp+24], r11   
     xor    rax, rax 
     mulx   r10, r11, [reg_p1+40]
-	mov    [rsp+32], r12
+        mov    [rsp+32], r12
     adox   r9, r11        
     mulx   r11, r12, [reg_p1+48]
-	mov    [rsp+40], r13
+        mov    [rsp+40], r13
     adox   r10, r12        
     mulx   r12, r13, [reg_p1+56] 
     adox   r11, r13       
     adox   r12, rax
 
-	FPMUL256x256 [rsp], [reg_p1+32], r8, r9, r10, r11, r12, rbx, rcx
+        FPMUL256x256 [rsp], [reg_p1+32], r8, r9, r10, r11, r12, rbx, rcx
 
-	add    rsp, 32
+        add    rsp, 32
     mov    [reg_p2], r12
     mov    [reg_p2+8], r8         
     mov    [reg_p2+16], r9         
@@ -566,7 +574,7 @@ fmt(fpmul217_asm):
     push rbx
     push rbp
 
-	FPMUL256x256 [reg_p2], [reg_p1], r8, r9, r10, r11, r12, rbx, rbp
+        FPMUL256x256 [reg_p2], [reg_p1], r8, r9, r10, r11, r12, rbx, rbp
 
     mov    [rcx], r12
     mov    [rcx+8], r8         

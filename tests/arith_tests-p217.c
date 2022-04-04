@@ -267,6 +267,7 @@ bool fp2_test()
         fp2copy217(ma, mc);
         from_fp2mont(mc, c);
         if (compare_words((digit_t*)a, (digit_t*)c, 2*NWORDS_FIELD)!=0) { passed=0; break; }
+        printf("PASSED: 1");
         
         to_fp2mont(a, ma); to_fp2mont(b, mb); to_fp2mont(c, mc); 
         fp2mul217_mont(ma, mb, md); fp2mul217_mont(md, mc, me);                          // e = (a*b)*c
@@ -274,6 +275,7 @@ bool fp2_test()
         from_fp2mont(me, e);
         from_fp2mont(mf, f);
         if (compare_words((digit_t*)e, (digit_t*)f, 2*NWORDS_FIELD)!=0) { passed=0; break; }
+        printf("PASSED: 2");
       
         to_fp2mont(a, ma); to_fp2mont(b, mb); to_fp2mont(c, mc); 
         fp2add217(mb, mc, md); fp2mul217_mont(ma, md, me);                               // e = a*(b+c)
@@ -282,12 +284,14 @@ bool fp2_test()
         from_fp2mont(mf, f);
         if (compare_words((digit_t*)e, (digit_t*)f, 2*NWORDS_FIELD)!=0) { passed=0; break; }
        
+        printf("PASSED: 3");
         to_fp2mont(a, ma); to_fp2mont(b, mb);
         fp2mul217_mont(ma, mb, md);                                                      // d = a*b 
         fp2mul217_mont(mb, ma, me);                                                      // e = b*a 
         from_fp2mont(md, d);
         from_fp2mont(me, e);
         if (compare_words((digit_t*)d, (digit_t*)e, 2*NWORDS_FIELD)!=0) { passed=0; break; }
+        printf("PASSED: 4");
         
         to_fp2mont(a, ma);
         fp2zero217(b); b[0][0] = 1; to_fp2mont(b, mb);
@@ -295,6 +299,7 @@ bool fp2_test()
         from_fp2mont(md, d);               
         if (compare_words((digit_t*)a, (digit_t*)d, 2*NWORDS_FIELD)!=0) { passed=0; break; }
         
+        printf("PASSED: 5");
         fp2zero217(b); to_fp2mont(b, mb);
         fp2mul217_mont(ma, mb, md);                                                      // d = a*0 
         from_fp2mont(md, d);               
@@ -590,7 +595,8 @@ int main()
     bool OK = true;
 
     OK = OK && fp_test();          // Test field operations using p217
-    OK = OK && fp_run();           // Benchmark field operations using p217
+    // TODO: Reenable after debug
+    //OK = OK && fp_run();           // Benchmark field operations using p217
 
     OK = OK && fp2_test();         // Test arithmetic functions over GF(p217^2)
     OK = OK && fp2_run();          // Benchmark arithmetic functions over GF(p217^2)

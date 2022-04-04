@@ -1,4 +1,5 @@
 ## Ignore temporary files and build results
+.gdb_history
 
 # User-specific files
 *.suo

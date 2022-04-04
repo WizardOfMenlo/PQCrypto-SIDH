@@ -359,12 +359,79 @@ void fp2mul_mont(const f2elm_t a, const f2elm_t b, f2elm_t c)
 
 
 void fpinv_chain_mont(digit_t* a)
-{ // Chain to compute a^(p-3)/4 using Montgomery arithmetic.
+{ // Chain to compute a^((p-3)/4) using Montgomery arithmetic.
     unsigned int i, j;
     
 #if (NBITS_FIELD == 217)
-    // TODO: Implement this for p217
-    exit(-1);
+    // (We used addchain)
+    felm_t z, t0, t1, t2, t3, t4, t5, t6;
+
+    fpsqr_mont(a, t0);
+    fpmul_mont(a, t0, t1);
+    fpmul_mont(t0, t1, t2);
+    fpsqr_mont(t2, z);
+    fpmul_mont(t1, z, t4);
+    fpmul_mont(a, t4, t1);
+    fpsqr_mont(z, t6);
+    fpmul_mont(z, t1, t3);
+    for (i = 0; i < 2; i++) fpsqr_mont(t3, t3);
+    fpmul_mont(a, t3, t5);
+    fpmul_mont(z, t5, z);
+    fpmul_mont(t1, z, t3);
+    fpmul_mont(t0, t3, t0);
+    fpmul_mont(t2, t0, t1);
+    fpsqr_mont(t1, t1);
+    fpmul_mont(t5, t1, t5);
+    fpmul_mont(t4, t5, t4);
+    fpmul_mont(t6, t4, t6);
+    fpmul_mont(t2, t6, t2);
+    fpmul_mont(t0, t2, t0);
+    fpmul_mont(t4, t0, t4);
+    fpmul_mont(t5, t4, t5);
+    fpsqr_mont(t5, t5);
+    fpmul_mont(t6, t5, t6);
+    fpmul_mont(t1, t6, t1);
+    fpmul_mont(t4, t1, t4);
+    fpmul_mont(z, t4, z);
+    fpmul_mont(t3, z, t3);
+    fpmul_mont(t2, t3, t2);
+    fpmul_mont(t5, t2, t5);
+    fpmul_mont(t2, t5, t2);
+    fpmul_mont(t0, t2, t0);
+    fpmul_mont(t1, t0, t1);
+    fpsqr_mont(t1, t1);
+    fpmul_mont(a, t1, t1);
+    fpmul_mont(t4, t1, t4);
+    fpmul_mont(t6, t4, t6);
+    fpmul_mont(t3, t6, t3);
+    fpmul_mont(t2, t3, t2);
+    fpmul_mont(t0, t2, t0);
+    for (j = 0; j < 17; j++) fpsqr_mont(t6, t6);
+    fpmul_mont(t5, t6, t5);
+    for (i = 0; i < 20; i++) fpsqr_mont(t5, t5);
+    fpmul_mont(t4, t5, t4);
+    for (i = 0; i < 18; i++) fpsqr_mont(t4, t4);
+    fpmul_mont(t3, t4, t3);
+    for (i = 0; i < 20; i++) fpsqr_mont(t3, t3);
+    fpmul_mont(t2, t3, t2);
+    for (i = 0; i < 15; i++) fpsqr_mont(t2, t2);
+    fpmul_mont(t1, t2, t1);
+    for (i = 0; i < 17; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t1);
+    for (i = 0; i < 16; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t1);
+    for (i = 0; i < 16; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t1);
+    for (i = 0; i < 16; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t1);
+    for (i = 0; i < 16; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t1);
+    for (i = 0; i < 16; i++) fpsqr_mont(t1, t1);
+    fpmul_mont(t0, t1, t0);
+    for (i = 0; i < 12; i++) fpsqr_mont(t0, t0);
+    fpmul_mont(z, t0, z);
+    fpcopy(z, a);
+
 #elif (NBITS_FIELD == 434)
     felm_t t[31], tt;
 
