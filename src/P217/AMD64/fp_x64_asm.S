@@ -155,7 +155,6 @@ fmt(fpsub217_asm):
   sbb    r9, [reg_p2+8] 
   sbb    r10, [reg_p2+16] 
   sbb    r11, [reg_p2+24] 
-//TODO: We reuse a register here, do we need to?
   mov    rax, [rip+\P0]
   mov    rdi, [rip+\P0+8]
   mov    rsi, [rip+\P0+16]
@@ -240,7 +239,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z0, \Z1, \Z2, \Z3, \Z4, \T0, \T1, rax                
     // [Z1:Z4] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z0                 // rdx <- z0
-    MULADD64x192 [rip+fmt(p217p1)+8], \Z3, \Z4, \Z0, \Z1, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z1, \Z2, \Z3, \Z4, \T0, \T1
     
     // [Z1:Z4, \Z0] <- z = a01 x a1 + z 
     mov    rdx, 8\M10
@@ -249,7 +248,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z1, \Z2, \Z3, \Z4, \Z0, \T0, \T1, rax        
     // [Z2:Z4, Z0] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z1                 // rdx <- z0
-    MULADD64x192 [rip+fmt(p217p1)+8], \Z4, \Z0, \Z1, \Z2, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z2, \Z3, \Z4, \Z0, \T0, \T1
     
     // [Z2:Z4, Z0:Z1] <- z = a02 x a1 + z  
     mov    rdx, 16\M10
@@ -258,7 +257,7 @@ fmt(mp_sub217_p2_asm):
     MULADD64x256 \M01, \Z2, \Z3, \Z4, \Z0, \Z1, \T0, \T1, rax     
     // [Z3:Z4, Z0:Z1] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z2                // rdx <- z0
-    MULADD64x192 [rip+fmt(p217p1)+8], \Z0, \Z1, \Z2, \Z3, \T0, \T1
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z3, \Z4, \Z0, \Z1, \T0, \T1
     
     // [Z3:Z4, Z0:Z2] <- z = a03 x a1 + z
     mov    rdx, 24\M10
@@ -273,12 +272,13 @@ fmt(mp_sub217_p2_asm):
     // [Z4, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
     // TODO: Unwrap this with new method
-    //MULADD64x192 [rip+fmt(p217p1)+8], \Z1, \Z2, \T0, \T1
-    mulx   \Z3, \Z4, [rip+fmt(p217p1)+8]
-    adox   \Z1, \Z4
-    adox   \Z2, \Z3  
-    adcx   \Z2, rax
+    MULADD64x192 [rip+fmt(p217p1)+8], \Z4, \Z0, \Z1, \Z2, \T0, \T1
+    //mulx   \Z3, \Z4, [rip+fmt(p217p1)+8]
+    //adox   \Z1, \Z4
+    //adox   \Z2, \Z3  
+    //adcx   \Z2, rax
     mov [rcx+8], \Z0
+    
     pop    \T0
 .endm
 
@@ -365,6 +365,9 @@ fmt(fp2mul217_c1_asm):
     adox   r11, r13       
     adox   r12, rax 
 
+    push rbx
+    push rbp
+
         FPDBLMUL256x256 [reg_p1+32], [reg_p1], [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rbp
                              
     mov    [rcx+16], r9
@@ -442,7 +445,6 @@ fmt(fp2sqr217_c0_asm):
         adc    r9, [reg_p1+40]
         adc    r10, [reg_p1+48]
         adc    r11, [reg_p1+56]
-        adc    r12, [reg_p1+88]
 
         // Store to p2
         mov    [reg_p2], r8
@@ -484,8 +486,7 @@ fmt(fp2sqr217_c0_asm):
            
         FPMUL256x256 [reg_p2], [reg_p2+32], r8, r9, r10, r11, r12, rbx, rcx
            
-    // TODO: Understand this part
-    mov    [reg_p2], r11
+    mov    [reg_p2], r12
     mov    [reg_p2+8], r8         
     mov    [reg_p2+16], r9         
     mov    [reg_p2+24], r10      
@@ -505,6 +506,7 @@ fmt(fp2sqr217_c0_asm):
 fmt(fp2sqr217_c1_asm):  
     push   r12
         
+    // [rsp:rsp+32] = 2 * a0
         mov    r8, [reg_p1]
         mov    r9, [reg_p1+8]
         mov    r10, [reg_p1+16]
@@ -516,7 +518,7 @@ fmt(fp2sqr217_c1_asm):
         adc    r11, r11 
     push   rbx 
         sub    rsp, 32
-        // mov [rsp+8] r8 (No! We precompute it because we are cool!)
+        // mov [rsp] r8 (No! We skipped doing this by precomputing it!)
         mov    [rsp+8], r9
         mov    [rsp+16], r10
     
@@ -526,10 +528,8 @@ fmt(fp2sqr217_c1_asm):
         mov    [rsp+24], r11   
     xor    rax, rax 
     mulx   r10, r11, [reg_p1+40]
-        mov    [rsp+32], r12
     adox   r9, r11        
     mulx   r11, r12, [reg_p1+48]
-        mov    [rsp+40], r13
     adox   r10, r12        
     mulx   r12, r13, [reg_p1+56] 
     adox   r11, r13       
