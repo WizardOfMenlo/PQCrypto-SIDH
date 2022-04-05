@@ -192,7 +192,7 @@ void fpmul217(const digit_t* a, const digit_t* b, digit_t* c)
 
 #else
 
-// TODO: Both of these are the old P434, change it P217
+// TODO: Both of these are the old P434, change it P217 (No need really since these are only for not unix)
 
 void mp_mul(const digit_t* a, const digit_t* b, digit_t* c, const unsigned int nwords)
 { // Multiprecision multiply, c = a*b, where lng(a) = lng(b) = nwords.

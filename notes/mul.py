@@ -52,18 +52,13 @@ def multiply_optimized(a: int, b:int):
     u = 0
     b_words = intwordify(b)
     for j in range(0, 4):
-        print('---------------------------------------------------------' * 2)
         u = u + b_words[j] * a
-        print(f'u + b_{j}*a: {hexwordify(u)}')
         q = u % 2**w
-        print(f'q: {hex(q)}')
-        #u = (u // 2**w) + q * p_hat
-        u = (u + q * (p+1)) // 2**64
-        print(f'updated u: {hexwordify(u)}')
+        u = (u // 2**w) + q * p_hat
 
-    print('----------------------------------------------------------' * 2)
     return u
 
+"""
 a0 = intg(4172967017517061463, 14379429852719655040, 2784329423768121391, 16539254)
 a1 = intg(1359301204317365176, 3561917806437325732, 1304080115114587095, 427086)
 
@@ -75,6 +70,8 @@ a = (a0, a1)
 b = (b0, b1)
 
 """
+
+"""
 Compute multiplication in F_p^2 (real part)
 a[0]b[0] - a[1]*b[1]
 """
@@ -83,20 +80,9 @@ def fp2mul_c0_mont(a : tuple[int, int], b: tuple[int, int]):
     b0_words = intwordify(b[0])
     b1_words = intwordify(8*p - b[1])
 
-    print('Precomputed: ', hexwordify(8*p - b[1]))
-
     for j in range(0, 4):
-        print('---------------------------------------------------------' * 2)
         u = u + b0_words[j] * a[0] + b1_words[j] * a[1]
-        print(f'u + b0_{j}*a_0 - b1_{j}*a_1: {hexwordify(u)}')
         q = u % 2**w
-        print(f'q: {hex(q)}')
-        #u = (u // 2**w) + q * p_hat
         u = (u + q * (p+1)) // 2**64
-        print(f'updated u: {hexwordify(u)}')
 
-    print('----------------------------------------------------------' * 2)
     return u
-
-print('Result: ', fp2mul_c0_mont(a, b))
-print('Expected: ', ((a0 * b0 - a1 * b1) * R_inv) % p)

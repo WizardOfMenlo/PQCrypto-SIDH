@@ -1,0 +1,50 @@
+--------------------------------------------------------------------------------------------------------
+
+Testing field arithmetic over GF(p217):
+
+  GF(p) addition tests ............................................ PASSED
+  GF(p) subtraction tests ......................................... PASSED
+  GF(p) multiplication tests ...................................... PASSED
+  GF(p) squaring tests............................................. PASSED
+  GF(p) inversion tests............................................ PASSED
+
+--------------------------------------------------------------------------------------------------------
+
+Benchmarking field arithmetic over GF(p217):
+
+  GF(p) addition runs in ..........................................      31 cycles
+  GF(p) subtraction runs in .......................................      33 cycles
+  GF(p) multiplication runs in ....................................      58 cycles
+  GF(p) inversion (exponentiation) runs in ........................   10462 cycles
+
+--------------------------------------------------------------------------------------------------------
+
+Testing quadratic extension arithmetic over GF(p217^2):
+
+  GF(p^2) addition tests .......................................... PASSED
+  GF(p^2) subtraction tests ....................................... PASSED
+  GF(p^2) multiplication tests .................................... PASSED
+  GF(p^2) squaring tests........................................... PASSED
+  GF(p^2) inversion tests.......................................... PASSED
+
+--------------------------------------------------------------------------------------------------------
+
+Benchmarking quadratic extension arithmetic over GF(p217^2):
+
+  GF(p^2) addition runs in ........................................      32 cycles
+  GF(p^2) subtraction runs in .....................................      33 cycles
+  GF(p^2) multiplication runs in ..................................     142 cycles
+  GF(p^2) squaring runs in ........................................     106 cycles
+  GF(p^2) inversion (exponentiation) runs in ......................   10895 cycles
+
+--------------------------------------------------------------------------------------------------------
+
+Benchmarking elliptic curve and isogeny functions:
+
+  Point doubling runs in ..........................................     703 cycles
+  4-isogeny of projective point runs in ...........................     435 cycles
+  4-isogeny evaluation at projective point runs in ................     914 cycles
+  Point tripling runs in ..........................................    1389 cycles
+  3-isogeny of projective point runs in ...........................     633 cycles
+  3-isogeny evaluation at projective point runs in ................     663 cycles
+
