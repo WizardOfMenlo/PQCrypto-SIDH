@@ -265,20 +265,13 @@ fmt(mp_sub217_p2_asm):
     mov    rdx, 24\M11    
     MULADD64x256 \M01, \Z3, \Z4, \Z0, \Z1, \Z2, \T0, \T1, rax     
     
-    pop    \T1
-    mov    [rcx], \Z4
-
-    xor rax, rax
     // [Z4, Z0:Z2] <- z = (z0 x p217p1 + z)/2^64
     mov    rdx, \Z3                // rdx <- z0
-    // TODO: Unwrap this with new method
     MULADD64x192 [rip+fmt(p217p1)+8], \Z4, \Z0, \Z1, \Z2, \T0, \T1
-    //mulx   \Z3, \Z4, [rip+fmt(p217p1)+8]
-    //adox   \Z1, \Z4
-    //adox   \Z2, \Z3  
-    //adcx   \Z2, rax
-    mov [rcx+8], \Z0
+        mov    [rcx], \Z4
+        mov [rcx+8], \Z0
     
+    pop    \T1
     pop    \T0
 .endm
 
