@@ -327,7 +327,8 @@ lib751comp_for_KATs: $(OBJECTS_751_COMP) $(AES_OBJS)
 
 
 tests_p217: lib217 
-	$(CC) $(CFLAGS) -L./lib217 tests/arith_tests-p217.c tests/test_extras.c -lsidh $(LDFLAGS) -o arith_tests-p217$(ARM_SETTING)
+	$(CC) $(CFLAGS) -L./lib217 tests/check_isogeny_217.c tests/test_extras.c -lsidh $(LDFLAGS) -o check_isogeny_217 $(ARM_SETTING)
+	$(CC) $(CFLAGS) -L./lib217 tests/arith_tests-p217.c tests/test_extras.c -lsidh $(LDFLAGS) -o arith_tests-p217 $(ARM_SETTING)
 	$(CC) $(CFLAGS) -L./lib217 tests/test_SIDHp217.c tests/test_extras.c -lsidh $(LDFLAGS) -o sidh217/test_SIDH $(ARM_SETTING)
 	$(CC) $(CFLAGS) -L./lib217 tests/test_SIKEp217.c tests/test_extras.c -lsidh $(LDFLAGS) -o sike217/test_SIKE $(ARM_SETTING)
 
@@ -404,5 +405,5 @@ endif
 .PHONY: clean
 
 clean:
-	rm -rf *.req objs217* objs434* objs503* objs610* objs751* objs lib217* lib434* lib503* lib610* lib751* sidh217* sidh434* sidh503* sidh610* sidh751* sike217* sike434* sike503* sike610* sike751* arith_tests-*
+	rm -rf *.req objs217* objs434* objs503* objs610* objs751* objs lib217* lib434* lib503* lib610* lib751* sidh217* sidh434* sidh503* sidh610* sidh751* sike217* sike434* sike503* sike610* sike751* arith_tests-* check_*
 

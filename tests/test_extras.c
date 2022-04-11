@@ -90,12 +90,12 @@ static void sub_test(digit_t* a, digit_t* b, digit_t* c, unsigned int nwords)
 void fprandom217_test(digit_t* a)
 { // Generating a pseudo-random field element in [0, p217-1] 
   // SECURITY NOTE: distribution is not fully uniform. TO BE USED FOR TESTING ONLY.
-    unsigned int i, diff = 256-217, nwords = NBITS_TO_NWORDS(256);
+    unsigned int i, diff = 256-217, nwords = NBITS_TO_NWORDS(217);
     unsigned char* string = NULL;
 
     string = (unsigned char*)a;
     for (i = 0; i < sizeof(digit_t)*nwords; i++) {
-        *(string + i) = (unsigned char)rand();              // Obtain 448-bit number
+        *(string + i) = (unsigned char)rand();              // Obtain 256-bit number
     }
     a[nwords-1] &= (((digit_t)(-1) << diff) >> diff);
 
