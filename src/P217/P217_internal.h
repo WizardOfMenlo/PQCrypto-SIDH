@@ -38,16 +38,18 @@
 #define OALICE_BITS             110
 #define OBOB_BITS               107
 #define OBOB_EXPON              67    
-#define MASK_ALICE              0xFF 
-#define MASK_BOB                0x01 
+// TODO: Fix the masks to zero out the last byte
+#define MASK_ALICE              0x3F 
+#define MASK_BOB                0x03 
 #define PRIME                   p217 
 #define PARAM_A                 6  
 #define PARAM_C                 1
 // Fixed parameters for isogeny tree computation
-#define MAX_INT_POINTS_ALICE    7        
+// TODO: MAX_INT_POINTS_BOB might be a bit too big
+#define MAX_INT_POINTS_ALICE    6        
 #define MAX_INT_POINTS_BOB      8      
-#define MAX_Alice               108
-#define MAX_Bob                 137
+#define MAX_Alice               55
+#define MAX_Bob                 67
 #define MSG_BYTES               16
 #define SECRETKEY_A_BYTES       ((OALICE_BITS + 7) / 8)
 #define SECRETKEY_B_BYTES       ((OBOB_BITS - 1 + 7) / 8)
